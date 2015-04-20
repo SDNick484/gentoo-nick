@@ -1,0 +1,40 @@
+# ChangeLog for media-tv/pytivo-wmcbrine
+# Copyright 1999-2012 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+*pytivo-wmcbrine-20120910 (13 Oct 2012)
+
+  13 Oct 2012; John Ratliff (jdratlif) <webmaster@technoplaza.net>
+  -pytivo-wmcbrine-20100808.ebuild, +pytivo-wmcbrine-20120910.ebuild,
+  +files/pytivo, -files/pyTivo.initd.sh:
+  Version bump for pytivo-wmcbrine. Thanks to _AxS_, SebastienP, and Tommy[D]
+
+  22 Jun 2012; Thomas Sachau (Tommy[D]) <tommy@gentoo.org>
+  pytivo-wmcbrine-20100808.ebuild:
+  inherit user eclass instead of eutils eclass for enewuser
+
+  31 Oct 2010; John Ratliff <webmaster@technoplaza.net>
+  -pytivo-wmcbrine-20100412.ebuild, +pytivo-wmcbrine-20100808.ebuild:
+  Version bump for pytivo-wmcbrine
+
+  16 Apr 2010; John Ratliff (jdratlif) <webmaster@technoplaza.net>
+  -pytivo-wmcbrine-20091112.ebuild, +pytivo-wmcbrine-20100412.ebuild,
+  files/pyTivo.initd.sh:
+  Version bump for pytivo-wmcbrine, thanks to sedzimir
+
+  04 Dec 2009; Thomas Sachau (Tommy[D]) <tommy@gentoo.org>
+  pytivo-wmcbrine-20091112.ebuild:
+  Dont hardcode ${P}
+
+  26 Nov 2009; John Ratliff <webmaster@technoplaza.net>
+  -pytivo-wmcbrine-20090908.ebuild, +pytivo-wmcbrine-20091112.ebuild:
+  Version bump for pyTivo, thanks to chithead
+
+  20 Sep 2009; Thomas Sachau (Tommy[D]) <tommy@gentoo.org>
+  pytivo-wmcbrine-20090908.ebuild:
+  Move WANT_PYTHON to (R)DEPEND
+
+  13 Sep 2009; John Ratliff (jdratlif) <webmaster@technoplaza.net>
+  +pytivo-wmcbrine-20090908.ebuild, +files/pyTivo.initd.sh, +metadata.xml:
+  New Ebuild for bug 284737 thanks to _AxS_, desultory, ohnobinki, and Obeliks
+

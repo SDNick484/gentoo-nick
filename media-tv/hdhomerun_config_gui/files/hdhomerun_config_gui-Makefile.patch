@@ -1,0 +1,21 @@
+--- a/hdhomerun_config_gui/Makefile.am	2014-05-19 15:41:10.000000000 -0700
++++ b/hdhomerun_config_gui/Makefile.am	2014-11-29 21:35:15.641931525 -0800
+@@ -1,6 +1,6 @@
+ ## Process this file with automake to produce Makefile.in
+ 
+-SUBDIRS = ../libhdhomerun src
++SUBDIRS = src
+ 
+ EXTRA_DIST = \
+ 	autogen.sh \
+--- a/hdhomerun_config_gui/src/Makefile.am	2013-05-03 14:14:06.000000000 -0700
++++ b/hdhomerun_config_gui/src/Makefile.am	2014-11-29 21:36:14.317934839 -0800
+@@ -1,7 +1,7 @@
+ ## Process this file with automake to produce Makefile.in
+ 
+ INCLUDES = \
+-	-I../../libhdhomerun \
++	-I/usr/include/hdhomerun \
+ 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
+ 	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\" \
+ 	@PACKAGE_CFLAGS@

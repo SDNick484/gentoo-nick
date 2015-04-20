@@ -1,0 +1,11 @@
+--- a/dvbhdhomerun-0.0.15/userhdhomerun/hdhomerun_tuner.h	2013-02-17 13:37:35.000000000 -0800
++++ b/dvbhdhomerun-0.0.15/userhdhomerun/hdhomerun_tuner.h	2014-12-08 20:31:25.444102952 -0800
+@@ -24,7 +24,7 @@
+ 
+ #include "thread_pthread.h"
+ 
+-#include <hdhomerun.h>
++#include <hdhomerun/hdhomerun.h>
+ 
+ #include <string>
+ #include <vector>

@@ -1,0 +1,26 @@
+--- a/libmpdemux/ebml.c	2014-12-14 15:12:35.212058567 -0800
++++ b/libmpdemux/ebml.c	2014-12-14 15:10:53.777052620 -0800
+@@ -28,7 +28,8 @@
+ #include "ebml.h"
+ #include "libavutil/common.h"
+ #include "mpbswap.h"
+-#include "libavutil/intfloat_readwrite.h"
++#include "libavutil/intfloat.h"
++#include "libavutil/intreadwrite.h"
+ 
+ 
+ #ifndef SIZE_MAX
+@@ -185,11 +186,11 @@
+     len = ebml_read_length(s, &l);
+     switch (len) {
+     case 4:
+-        value = av_int2flt(stream_read_dword(s));
++        value = av_int2float(stream_read_dword(s));
+         break;
+ 
+     case 8:
+-        value = av_int2dbl(stream_read_qword(s));
++        value = av_int2double(stream_read_qword(s));
+         break;
+ 
+     default:

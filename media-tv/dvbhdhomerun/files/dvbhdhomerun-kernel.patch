@@ -1,0 +1,172 @@
+diff -ru a/dvbhdhomerun-0.0.15/kernel/Makefile c/dvbhdhomerun-master/kernel/Makefile
+--- a/dvbhdhomerun-0.0.15/kernel/Makefile	2013-01-20 07:01:21.000000000 -0800
++++ c/dvbhdhomerun-master/kernel/Makefile	2014-08-05 17:39:19.000000000 -0700
+@@ -1,31 +1,33 @@
+-KERNEL_VERSION	:= `uname -r`
+-KERNEL_DIR	:= /lib/modules/$(KERNEL_VERSION)/build
++KERNELRELEASE	:= `uname -r`
++KVERCLEAN       := $(shell echo $(KERNELRELEASE) | cut -f1 -d-)
++KVERMAJ         := $(shell echo $(KVERCLEAN) | cut -f1 -d.)
++KVERMIN         := $(shell echo $(KVERCLEAN) | cut -f2 -d.)
+ PWD		:= $(shell pwd)
+-
+-# 3.7.x
+-ccflags-y	+= -Idrivers/media/dvb-core -Idrivers/media/frontends
+-# Older than 3.7.x
+-ccflags-y	+= -Idrivers/media/dvb/dvb-core -Idrivers/media/dvb/frontends
++HEADERSUBFOLDER  = $(shell [ $(KVERMAJ) -gt 2 -a $(KVERMIN) -gt 6 ] && echo || echo /dvb)
+ 
+ dvb_hdhomerun-objs := dvb_hdhomerun_init.o dvb_hdhomerun_data.o dvb_hdhomerun_control.o
+ obj-m += dvb_hdhomerun.o
+-
+-#dvb_hdhomerun_core-objs := dvb_hdhomerun_core.o
+ obj-m += dvb_hdhomerun_core.o
+-
+-#dvb_hdhomerun_fe-objs := dvb_hdhomerun_fe.o
+ obj-m += dvb_hdhomerun_fe.o
+ 
+-all: dvb_hdhomerun
++ccflags-y	+= -I$(src)/headers/$(KVERMAJ).$(KVERMIN)
++
++all: dlheaders dvb_hdhomerun
++
++dlheaders: dlmain
++	@echo Downloading kernel header dependencies...
++	@$(foreach var,$(shell grep -h ^\\\#include\ \" $(PWD)/headers/$(KVERMAJ).$(KVERMIN)/*.[ch] 2>/dev/null | sort -u | sed 's/\#include "\(.*\)"/\1/'),curl -# -L -o $(PWD)/headers/$(KVERMAJ).$(KVERMIN)/$(var) https://github.com/torvalds/linux/raw/v$(KVERMAJ).$(KVERMIN)/drivers/media$(HEADERSUBFOLDER)/dvb-core/$(var);)
++
++dlmain:
++	@echo Downloading kernel headers...
++	@mkdir -p $(PWD)/headers/$(KVERMAJ).$(KVERMIN)
++	@$(foreach var,$(shell grep -h ^\\\#include\ \" *.[ch] 2>/dev/null | grep -v hdhomerun | sort -u | sed 's/\#include "\(.*\)"/\1/'),curl -# -L -o $(PWD)/headers/$(KVERMAJ).$(KVERMIN)/$(var) https://github.com/torvalds/linux/raw/v$(KVERMAJ).$(KVERMIN)/drivers/media$(HEADERSUBFOLDER)/dvb-core/$(var);)
++
+ dvb_hdhomerun:
+-	@echo "Building driver..." ccflags-y=$(ccflags-y)
+-	$(MAKE) -C $(KERNEL_DIR)  M=$(PWD) modules
++	$(MAKE) -C /lib/modules/$(KERNELRELEASE)/build M=$(PWD) modules
+ 
+ install: dvb_hdhomerun
+-	$(MAKE) -C $(KERNEL_DIR) M=$(PWD) modules_install
+-	depmod -aeF /boot/System.map-$(KERNEL_VERSION)
++	$(MAKE) -C /lib/modules/$(KERNELRELEASE)/build M=$(PWD) modules_install
+ 
+ clean:
+-	rm -f *~
+-	rm -f Module.symvers Module.markers modules.order
+-	$(MAKE) -C $(KERNEL_DIR) M=$(PWD) clean
++	$(MAKE) -C /lib/modules/$(KERNELRELEASE)/build M=$(PWD) clean
+Only in a/dvbhdhomerun-0.0.15/kernel: do.sh
+diff -ru a/dvbhdhomerun-0.0.15/kernel/dvb_hdhomerun_core.h c/dvbhdhomerun-master/kernel/dvb_hdhomerun_core.h
+--- a/dvbhdhomerun-0.0.15/kernel/dvb_hdhomerun_core.h	2013-02-17 13:37:34.000000000 -0800
++++ c/dvbhdhomerun-master/kernel/dvb_hdhomerun_core.h	2014-08-05 17:39:19.000000000 -0700
+@@ -27,7 +27,7 @@
+ 
+ #include "dvb_hdhomerun_control_messages.h"
+ 
+-#define HDHOMERUN_VERSION "0.0.15"
++#define HDHOMERUN_VERSION "0.0.16"
+ 
+ #define HDHOMERUN_MAX_TUNERS 8
+ 
+diff -ru a/dvbhdhomerun-0.0.15/kernel/dvb_hdhomerun_data.c c/dvbhdhomerun-master/kernel/dvb_hdhomerun_data.c
+--- a/dvbhdhomerun-0.0.15/kernel/dvb_hdhomerun_data.c	2013-01-20 07:07:06.000000000 -0800
++++ c/dvbhdhomerun-master/kernel/dvb_hdhomerun_data.c	2014-08-05 17:39:19.000000000 -0700
+@@ -49,7 +49,6 @@
+    struct cdev cdev;
+    struct device *device;
+    char *write_buffer;
+-   ssize_t write_buffer_size;
+ };
+ 
+ static dev_t hdhomerun_major = -1;
+@@ -65,38 +64,23 @@
+                                     size_t count, loff_t *offset)
+ {
+    struct hdhomerun_data_state *state = f->private_data;
++   int copied = 0;
+ 
+    DEBUG_FUNC(1);
+    DEBUG_OUT(HDHOMERUN_DATA, "Count: %Zu, offset %lld\n", count, *offset);
+ 	
+-   // new buffer need to be allocated ?
+-   if( (state->write_buffer == NULL) || (count > state->write_buffer_size) ) {
+-      // free old buffer
+-      if(state->write_buffer) {
+-         kfree(state->write_buffer);
+-         state->write_buffer = NULL;
+-         state->write_buffer_size = 0;
+-      }
+-
+-      // allocate a bigger buffer
+-      state->write_buffer = kmalloc(count, GFP_KERNEL);
+-      if(!state->write_buffer) {
+-         printk(KERN_ERR "hdhomerun: unable to allocate buffer of %Zu bytes for device %d\n", count, state->id);
+-         return -ENOMEM;
+-      }
+-      state->write_buffer_size = count;
+-      printk(KERN_INFO "hdhomerun: allocated buffer of %Zu bytes for device %d\n", count, state->id);
+-   }
+-
+-   // write_buffer is allocated and is big enough
+-   if (copy_from_user(state->write_buffer, buf, count)) {
+-      return -EFAULT;
+-   }
++   while (copied < count) {
++     int to_copy = min(count - copied, PAGE_SIZE);
++     if (copy_from_user(state->write_buffer, buf + copied, to_copy)) {
++       return -EFAULT;
++     }
+ 	
+-   /* Feed stuff to V4l-DVB */
+-   dvb_dmx_swfilter(state->dvb_demux, state->write_buffer, count);
++     /* Feed stuff to V4l-DVB */
++     dvb_dmx_swfilter(state->dvb_demux, state->write_buffer, to_copy);
++     copied += to_copy;
++   }
+ 
+-   return count;
++   return copied;
+ }
+ 
+ static int hdhomerun_data_open(struct inode *inode, struct file *file)
+@@ -181,8 +165,13 @@
+    state->id = id;
+ 
+    /* buffer */
+-   state->write_buffer = NULL;
+-   state->write_buffer_size = 0;
++   state->write_buffer = (char *)get_zeroed_page(GFP_KERNEL);
++   if (!state->write_buffer) {
++      printk(KERN_ERR
++             "HDHomeRun: Cannot allocate write buffer for device %d\n",
++             id);
++      return -ENOMEM;
++   }
+ 
+    /* Create dev_t for this tuner */
+    major = MAJOR(hdhomerun_major);
+@@ -222,9 +211,8 @@
+ 
+    /* free allocated buffer */
+    if(hdhomerun_data_states[id]->write_buffer != NULL) {
+-      kfree(hdhomerun_data_states[id]->write_buffer);
++      free_page((unsigned long)hdhomerun_data_states[id]->write_buffer);
+       hdhomerun_data_states[id]->write_buffer = NULL;
+-      hdhomerun_data_states[id]->write_buffer_size = 0;
+    }
+    cdev_del(&hdhomerun_data_states[id]->cdev);
+    device_destroy(hdhomerun_class, hdhomerun_data_states[id]->dev);
+diff -ru a/dvbhdhomerun-0.0.15/kernel/dvb_hdhomerun_init.c c/dvbhdhomerun-master/kernel/dvb_hdhomerun_init.c
+--- a/dvbhdhomerun-0.0.15/kernel/dvb_hdhomerun_init.c	2012-04-28 09:01:08.000000000 -0700
++++ c/dvbhdhomerun-master/kernel/dvb_hdhomerun_init.c	2014-08-05 17:39:19.000000000 -0700
+@@ -47,6 +47,11 @@
+ 
+ DVB_DEFINE_MOD_OPT_ADAPTER_NR(adapter_nr);
+ 
++#ifndef __devinit
++#define __devinit
++#define __devinitdata
++#endif
++
+ extern int hdhomerun_debug_mask;
+ 
+ struct dvb_hdhomerun {
