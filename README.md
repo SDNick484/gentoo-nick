@@ -28,16 +28,24 @@ echo 'dev-python/elevate ~amd64' >> /etc/portage/package.accept_keywords/howdy
 | Package | Notes |
 |---|---|
 | `media-video/xrdome` | Live ebuild for [SDNick484/xrdome](https://github.com/SDNick484/xrdome). Same file as `packaging/gentoo/` upstream. |
-| `sys-auth/howdy` | 3.0.0, pinned to an upstream commit. Needs the two packages below. |
-| `sys-auth/howdy-models` | dlib face models for howdy. |
-| `dev-python/elevate` | howdy dependency. |
+| `sys-auth/howdy` | 3.0.0, pinned to an upstream commit. Needs the two packages below. The global `gtk` flag adds the `howdy-gtk` GUI. |
+| `sys-auth/howdy-models` | The three dlib face models howdy loads. |
+| `dev-python/elevate` | `howdy-gtk` dependency. |
 
-`sys-auth/howdy`, `sys-auth/howdy-models` and `dev-python/elevate` come from
-[kcning/gentoo-overlay](https://github.com/kcning/gentoo-overlay), with the original
-copyright headers kept. `howdy-models` and `elevate` are unchanged. `howdy` is
-`3.0.0-r1` here: it installs the PAM module to `/$(get_libdir)/security`, always
-installs `config.ini`, declares the PAM module's build deps, and uses
-`python-single-r1`. `howdy` also needs `>=sci-libs/dlib-19.24.3[python]`, which is in `::gentoo`.
+`sys-auth/howdy`, `sys-auth/howdy-models` and `dev-python/elevate` started from
+[kcning/gentoo-overlay](https://github.com/kcning/gentoo-overlay); the original
+copyright headers are kept, but all three have been changed here:
+
+- `howdy` is `3.0.0-r1`: it installs the PAM module to `/$(get_libdir)/security`,
+  always installs `config.ini`, declares the PAM module's build deps, uses
+  `python-single-r1`, and uses the global `gtk` flag instead of `gtk3`/`qt6`
+  (opencv may have either highgui backend). With `gtk` it also installs the polkit
+  action `howdy-gtk` needs to open its window through `pkexec`.
+- `howdy-models` downloads only the three models howdy uses (~28 MB) instead of
+  the whole `dlib-models` tag (~200 MB). The installed files are the same.
+- `elevate` adds Python 3.15.
+
+`howdy` also needs `>=sci-libs/dlib-19.24.3[python]`, which is in `::gentoo`.
 
 The howdy ebuild does not touch `/etc/pam.d`; enabling it for login is up to you.
 

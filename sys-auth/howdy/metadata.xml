@@ -6,7 +6,7 @@
 		<name>Nick Andrade</name>
 	</maintainer>
 	<use>
-		<flag name="gtk3">Install the howdy-gtk GUI and use the GTK 3 backend of <pkg>media-libs/opencv</pkg></flag>
+		<flag name="gtk">Install the howdy-gtk GUI (GTK 3), with a polkit action so it can elevate itself through pkexec</flag>
 	</use>
 	<upstream>
 		<remote-id type="github">boltgolt/howdy</remote-id>
