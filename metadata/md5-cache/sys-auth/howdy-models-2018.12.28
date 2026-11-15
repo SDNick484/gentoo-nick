@@ -1,9 +1,0 @@
-DEFINED_PHASES=install
-DESCRIPTION=Trained dlib face models used by Howdy
-EAPI=8
-HOMEPAGE=https://github.com/davisking/dlib-models
-KEYWORDS=~amd64 ~x86
-LICENSE=CC0-1.0
-SLOT=0
-SRC_URI=https://raw.githubusercontent.com/davisking/dlib-models/2018-12-28/dlib_face_recognition_resnet_model_v1.dat.bz2 -> howdy-models-2018.12.28-dlib_face_recognition_resnet_model_v1.dat.bz2 https://raw.githubusercontent.com/davisking/dlib-models/2018-12-28/mmod_human_face_detector.dat.bz2 -> howdy-models-2018.12.28-mmod_human_face_detector.dat.bz2 https://raw.githubusercontent.com/davisking/dlib-models/2018-12-28/shape_predictor_5_face_landmarks.dat.bz2 -> howdy-models-2018.12.28-shape_predictor_5_face_landmarks.dat.bz2
-_md5_=c2ee9d1b46b679baf63ba528d138dd34
