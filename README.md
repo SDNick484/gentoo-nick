@@ -33,5 +33,14 @@ echo 'dev-python/elevate ~amd64' >> /etc/portage/package.accept_keywords/howdy
 | `dev-python/elevate` | howdy dependency. |
 
 `sys-auth/howdy`, `sys-auth/howdy-models` and `dev-python/elevate` come from
-[kcning/gentoo-overlay](https://github.com/kcning/gentoo-overlay), copied unchanged
-(original copyright headers kept). `howdy` also needs `>=sci-libs/dlib-19.24.3[python]`, which is in `::gentoo`.
+[kcning/gentoo-overlay](https://github.com/kcning/gentoo-overlay), with the original
+copyright headers kept. `howdy-models` and `elevate` are unchanged. `howdy` is
+`3.0.0-r1` here: it installs the PAM module to `/$(get_libdir)/security`, always
+installs `config.ini`, declares the PAM module's build deps, and uses
+`python-single-r1`. `howdy` also needs `>=sci-libs/dlib-19.24.3[python]`, which is in `::gentoo`.
+
+The howdy ebuild does not touch `/etc/pam.d`; enabling it for login is up to you.
+
+`media-libs/opencv-4.14.0` caps `media-video/ffmpeg` below 9 when `USE=ffmpeg`
+(Gentoo bug 980612). howdy reads the camera through OpenCV's V4L backend, so
+`media-libs/opencv -ffmpeg` in `package.use` works around it until that is fixed.

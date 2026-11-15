@@ -24,6 +24,9 @@ REQUIRED_USE="
 
 PATCHES=(
 	"${FILESDIR}/${P}-fix-dlib-data.patch"
+	# howdy-gtk ignored -Dpython_path and baked the build-time python
+	# wrapper from ${T} into /usr/bin/howdy-gtk.
+	"${FILESDIR}/${P}-gtk-python-path.patch"
 )
 
 # The PAM module (C++) links these.
