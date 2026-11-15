@@ -32,8 +32,10 @@ DEPEND="
 	sys-libs/pam
 "
 # NOTE: dlib version < 19.24.3 does not work with numpy 2.0
-# "howdy test" opens a cv2 window, so opencv needs a highgui backend;
-# either one will do. Snapshots read png and write jpeg.
+# opencv only builds videoio (cv2.VideoCapture, which howdy opens the
+# camera with) when ffmpeg or gstreamer is enabled; v4l alone is not
+# enough. "howdy test" opens a cv2 window, so opencv also needs a highgui
+# backend; either one will do. Snapshots read png and write jpeg.
 # elevate and pygobject are only used by howdy-gtk, which elevates
 # itself with pkexec.
 RDEPEND="
@@ -44,8 +46,10 @@ RDEPEND="
 		dev-python/python-pam[${PYTHON_USEDEP}]
 		>=sci-libs/dlib-19.24.3[python,${PYTHON_USEDEP}]
 		|| (
-			media-libs/opencv[gtk3,jpeg,png,python,v4l,${PYTHON_USEDEP}]
-			media-libs/opencv[qt6,jpeg,png,python,v4l,${PYTHON_USEDEP}]
+			media-libs/opencv[gstreamer,gtk3,jpeg,png,python,v4l,${PYTHON_USEDEP}]
+			media-libs/opencv[gstreamer,qt6,jpeg,png,python,v4l,${PYTHON_USEDEP}]
+			media-libs/opencv[ffmpeg,gtk3,jpeg,png,python,v4l,${PYTHON_USEDEP}]
+			media-libs/opencv[ffmpeg,qt6,jpeg,png,python,v4l,${PYTHON_USEDEP}]
 		)
 		gtk? (
 			dev-python/elevate[${PYTHON_USEDEP}]

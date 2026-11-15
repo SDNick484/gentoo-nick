@@ -49,6 +49,11 @@ copyright headers are kept, but all three have been changed here:
 
 The howdy ebuild does not touch `/etc/pam.d`; enabling it for login is up to you.
 
-`media-libs/opencv-4.14.0` caps `media-video/ffmpeg` below 9 when `USE=ffmpeg`
-(Gentoo bug 980612). howdy reads the camera through OpenCV's V4L backend, so
-`media-libs/opencv -ffmpeg` in `package.use` works around it until that is fixed.
+howdy opens the camera with `cv2.VideoCapture`, and `media-libs/opencv` only
+builds that (its `videoio` module) with `USE=ffmpeg` or `USE=gstreamer`; `v4l`
+alone is not enough. `opencv-4.14.0` caps `media-video/ffmpeg` below 9 when
+`USE=ffmpeg` (Gentoo bug 980612), so with ffmpeg 9 installed use gstreamer:
+
+```
+echo 'media-libs/opencv python gstreamer -ffmpeg' >> /etc/portage/package.use/howdy
+```
