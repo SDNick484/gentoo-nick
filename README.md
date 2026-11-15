@@ -4,16 +4,23 @@ Nick Andrade's personal Gentoo overlay (repo name `nick`).
 
 ## Use it
 
+As root, with `app-eselect/eselect-repository` installed:
+
 ```
 eselect repository add nick git https://github.com/SDNick484/gentoo-nick.git
 emaint sync -r nick
 ```
 
-Everything here is `~arch` or live. Accept keywords as needed, for example:
+Everything here is `~arch` or live. Accept keywords as needed (as root, with
+`/etc/portage/package.accept_keywords` as a directory). `xrdome` is a live
+ebuild with no keywords, so it needs `**`; `~amd64` is not enough. `howdy`
+pulls in `howdy-models` and `elevate`, which are `~amd64` too:
 
 ```
 echo 'media-video/xrdome **' >> /etc/portage/package.accept_keywords/xrdome
 echo 'sys-auth/howdy ~amd64' >> /etc/portage/package.accept_keywords/howdy
+echo 'sys-auth/howdy-models ~amd64' >> /etc/portage/package.accept_keywords/howdy
+echo 'dev-python/elevate ~amd64' >> /etc/portage/package.accept_keywords/howdy
 ```
 
 ## Packages

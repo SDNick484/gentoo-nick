@@ -1,0 +1,9 @@
+DEFINED_PHASES=install unpack
+DESCRIPTION=Trained model files for Howdy.
+EAPI=8
+HOMEPAGE=https://github.com/davisking/dlib-models
+KEYWORDS=~amd64 ~x86
+LICENSE=CC0-1.0
+SLOT=0
+SRC_URI=https://github.com/davisking/dlib-models/archive/refs/tags/2018-12-28.tar.gz -> howdy-models-2018.12.28.tar.gz
+_md5_=d372c64ab229235b43e0094eedea0065
