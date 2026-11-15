@@ -5,6 +5,9 @@
 		<email>SDNick484@users.noreply.github.com</email>
 		<name>Nick Andrade</name>
 	</maintainer>
+	<use>
+		<flag name="gtk3">Install the howdy-gtk GUI and use the GTK 3 backend of <pkg>media-libs/opencv</pkg></flag>
+	</use>
 	<upstream>
 		<remote-id type="github">boltgolt/howdy</remote-id>
 	</upstream>
