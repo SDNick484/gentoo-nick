@@ -1,0 +1,29 @@
+#!/sbin/openrc-run
+# Copyright 2026 Nick Andrade
+# Distributed under the terms of the GNU General Public License v2
+
+description="Go Hass Agent: report sensors and accept controls from Home Assistant"
+
+# The agent needs the same session bus as the desktop so it sees screen lock,
+# media and portal signals. Default to the dbus user service's socket.
+: "${DBUS_SESSION_BUS_ADDRESS:=unix:path=${XDG_RUNTIME_DIR}/bus}"
+export DBUS_SESSION_BUS_ADDRESS
+
+supervisor=supervise-daemon
+command="/usr/bin/go-hass-agent"
+command_args="run ${GOHASSAGENT_OPTS}"
+respawn_delay="${respawn_delay:-30}"
+respawn_max="${respawn_max:-0}"
+
+depend() {
+	need dbus
+	use net
+	after pipewire
+}
+
+start_pre() {
+	if [ -z "${XDG_RUNTIME_DIR}" ]; then
+		eerror "XDG_RUNTIME_DIR is not set; start this as an OpenRC user service"
+		return 1
+	fi
+}

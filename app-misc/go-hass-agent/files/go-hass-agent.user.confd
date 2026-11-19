@@ -1,0 +1,10 @@
+# Extra arguments for "go-hass-agent run", e.g. a different web UI port:
+#GOHASSAGENT_OPTS="--server-port 8223"
+
+# Session bus to use. Defaults to $XDG_RUNTIME_DIR/bus (dbus user service).
+# Set this if your desktop session starts its own bus with dbus-launch.
+#DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/1000/bus"
+
+# Seconds to wait before restarting after a crash (0 = unlimited restarts).
+#respawn_delay=30
+#respawn_max=0

@@ -21,6 +21,7 @@ echo 'media-video/xrdome **' >> /etc/portage/package.accept_keywords/xrdome
 echo 'sys-auth/howdy ~amd64' >> /etc/portage/package.accept_keywords/howdy
 echo 'sys-auth/howdy-models ~amd64' >> /etc/portage/package.accept_keywords/howdy
 echo 'dev-python/elevate ~amd64' >> /etc/portage/package.accept_keywords/howdy
+echo 'app-misc/go-hass-agent ~amd64' >> /etc/portage/package.accept_keywords/go-hass-agent
 ```
 
 ## Packages
@@ -31,6 +32,7 @@ echo 'dev-python/elevate ~amd64' >> /etc/portage/package.accept_keywords/howdy
 | `sys-auth/howdy` | 3.0.0, pinned to an upstream commit. Needs the two packages below. The global `gtk` flag adds the `howdy-gtk` GUI. |
 | `sys-auth/howdy-models` | The three dlib face models howdy loads. |
 | `dev-python/elevate` | `howdy-gtk` dependency. |
+| `app-misc/go-hass-agent` | [Go Hass Agent](https://github.com/joshuar/go-hass-agent), the Home Assistant desktop agent, with an OpenRC user service instead of upstream's systemd unit. |
 
 `sys-auth/howdy`, `sys-auth/howdy-models` and `dev-python/elevate` started from
 [kcning/gentoo-overlay](https://github.com/kcning/gentoo-overlay); the original
@@ -57,3 +59,23 @@ alone is not enough. `opencv-4.14.0` caps `media-video/ffmpeg` below 9 when
 ```
 echo 'media-libs/opencv python gstreamer -ffmpeg' >> /etc/portage/package.use/howdy
 ```
+
+## go-hass-agent
+
+Go ebuilds can't download modules at build time, and upstream builds its web UI
+with npm. Both are bundled into `go-hass-agent-<ver>-deps.tar.xz`, a release
+asset on this repo. To build it for a new version (needs network, Go, and npm):
+
+```
+scripts/make-go-hass-agent-deps.sh 14.19.0
+gh release create go-hass-agent-14.19.0 go-hass-agent-14.19.0-deps.tar.xz
+ebuild app-misc/go-hass-agent/go-hass-agent-14.19.0.ebuild manifest
+```
+
+The script also prints the dependency licenses (with `dev-go/go-licenses`
+installed) for the ebuild's `LICENSE` line.
+
+Start the agent with `rc-update --user add go-hass-agent default` (OpenRC 0.60+
+user services), or copy `start-go-hass-agent.desktop` into `~/.config/autostart`
+if your session bus isn't the dbus user service. Upstream's file capabilities are
+not applied; the post-install message has the `setcap` line if you want them.
