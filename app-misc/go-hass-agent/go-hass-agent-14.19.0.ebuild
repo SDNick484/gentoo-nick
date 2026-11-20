@@ -13,9 +13,11 @@ SRC_URI="
 "
 
 LICENSE="MIT"
-# Dependent licenses: regenerate with dev-go/go-licenses when bumping
+# Go dependencies: regenerate with dev-go/go-licenses when bumping
 # (see scripts/make-go-hass-agent-deps.sh in this overlay).
-LICENSE+=" Apache-2.0 BSD BSD-2 ISC MIT MPL-2.0"
+LICENSE+=" Apache-2.0 BSD BSD-2 MIT || ( BSD GPL-2 ) || ( EPL-2.0 BSD )"
+# Embedded web UI: htmx, hyperscript, tailwindcss/daisyUI, Inter fonts
+LICENSE+=" 0BSD BSD-2 MIT OFL-1.1"
 SLOT="0"
 KEYWORDS="~amd64"
 
@@ -40,9 +42,8 @@ src_compile() {
 }
 
 src_test() {
-	# Many tests probe D-Bus, /sys and the running session; keep to the
-	# packages that are hermetic.
-	ego test ./config/... ./models/... ./validation/...
+	# The suite needs only loopback, no session bus or network.
+	ego test ./...
 }
 
 src_install() {
@@ -82,7 +83,9 @@ pkg_postinst() {
 		elog "SMART sensors. They are NOT applied here: cap_sys_admin and"
 		elog "cap_dac_override on a user-run, network-facing binary are root-equivalent."
 		elog "Opt in yourself only if you need those sensors:"
-		elog "  setcap 'cap_setgid,cap_setuid,cap_sys_rawio,cap_sys_admin,cap_mknod,cap_dac_override=+ep' /usr/bin/go-hass-agent"
+		elog "  setcap \\"
+		elog "    'cap_setgid,cap_setuid,cap_sys_rawio,cap_sys_admin,cap_mknod,cap_dac_override=+ep' \\"
+		elog "    /usr/bin/go-hass-agent"
 	fi
 
 	optfeature "session, screen lock and power sensors/controls" sys-auth/elogind sys-apps/systemd
