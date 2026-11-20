@@ -1,0 +1,103 @@
+Webcam In Use: watch only /dev/video* and report any open device.
+
+Since upstream commit 5d9f92f ("watch /dev rather than /sys") the monitor
+globs /dev/* and treats every character device (null, tty, rfkill,
+hidraw, ...) as a video device, and the sensor shows whichever device's
+event came last. The result is a sensor that sits on at startup and flaps
+on unrelated device opens. Restrict the glob to video* and compute the
+state over all watched devices.
+
+diff --git a/pkg/linux/webcam/monitor.go b/pkg/linux/webcam/monitor.go
+index 79b7e03..5f1fb17 100644
+--- a/pkg/linux/webcam/monitor.go
++++ b/pkg/linux/webcam/monitor.go
+@@ -192,6 +192,18 @@ func (m *Monitor) closed(ctx context.Context, dev string) {
+ 	}
+ }
+ 
++// AnyActive reports whether any watched video device is currently open.
++func (m *Monitor) AnyActive() bool {
++	m.mu.Lock()
++	defer m.mu.Unlock()
++	for _, count := range m.active {
++		if count > 0 {
++			return true
++		}
++	}
++	return false
++}
++
+ func (m *Monitor) setCount(dev string, count int) {
+ 	m.mu.Lock()
+ 	prev := m.active[dev]
+@@ -390,7 +402,9 @@ func (m *Monitor) watchDevices(ctx context.Context, devices []string, devDir str
+ 
+ // GetVideoDevices returns the set of /dev/video* paths on the system.
+ func GetVideoDevices() ([]string, error) {
+-	matches, err := filepath.Glob(DeviceWatchPath + "/*")
++	// Only V4L2 nodes: a bare "/*" would treat every character device in
++	// /dev (null, tty, rfkill, hidraw, ...) as a webcam.
++	matches, err := filepath.Glob(DeviceWatchPath + "/video*")
+ 	if err != nil {
+ 		return nil, fmt.Errorf("get video device matches: %w", err)
+ 	}
+diff --git a/platform/linux/media/webcam.go b/platform/linux/media/webcam.go
+index 919e69d..38dbe5b 100644
+--- a/platform/linux/media/webcam.go
++++ b/platform/linux/media/webcam.go
+@@ -7,7 +7,6 @@ import (
+ 	"context"
+ 	"errors"
+ 	"fmt"
+-	"sync/atomic"
+ 
+ 	"github.com/joshuar/go-hass-agent/agent/workers"
+ 	"github.com/joshuar/go-hass-agent/models"
+@@ -25,8 +24,6 @@ type webcamUsageWorker struct {
+ 	pwEventChan chan pipewire.Event
+ 	inMonitor   *webcam.Monitor
+ 	sources     *pipewire.NodeTracker
+-	// deviceInUse is the usage reported by the device file (inotify) monitor.
+-	deviceInUse atomic.Bool
+ }
+ 
+ func NewWebcamUsageWorker(ctx context.Context) (workers.EntityWorker, error) {
+@@ -72,8 +69,7 @@ func (w *webcamUsageWorker) Start(ctx context.Context) (<-chan models.Entity, er
+ 
+ 	// Monitor webcam events through inotify/device files.
+ 	go func() {
+-		for event := range w.inMonitor.Run(ctx) {
+-			w.parseInotifyEvent(event)
++		for range w.inMonitor.Run(ctx) {
+ 			outCh <- w.newSensor(ctx)
+ 		}
+ 	}()
+@@ -88,7 +84,9 @@ func (w *webcamUsageWorker) IsDisabled() bool {
+ // newSensor reports the webcam as in use when either pipewire or the device
+ // file monitor sees it in use.
+ func (w *webcamUsageWorker) newSensor(ctx context.Context) models.Entity {
+-	inUse := w.sources.AnyIn(pipewire.StateRunning, pipewire.StateIdle) || w.deviceInUse.Load()
++	// Ask the monitor for the state of every device, not just the one in
++	// the latest event: laptops expose several /dev/video* nodes.
++	inUse := w.sources.AnyIn(pipewire.StateRunning, pipewire.StateIdle) || w.inMonitor.AnyActive()
+ 
+ 	return models.NewSensor(ctx,
+ 		models.WithName("Webcam In Use"),
+@@ -100,17 +98,6 @@ func (w *webcamUsageWorker) newSensor(ctx context.Context) models.Entity {
+ 	)
+ }
+ 
+-func (w *webcamUsageWorker) parseInotifyEvent(event webcam.Event) {
+-	switch event.Status {
+-	case webcam.StatusActive:
+-		w.deviceInUse.Store(true)
+-	case webcam.StatusIdle:
+-		fallthrough
+-	default:
+-		w.deviceInUse.Store(false)
+-	}
+-}
+-
+ func webcamUseIcon(value bool) string {
+ 	switch value {
+ 	case true:

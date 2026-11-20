@@ -34,6 +34,11 @@ BDEPEND=">=dev-lang/go-1.27.3:="
 
 DOCS=( README.md CHANGELOG.md BREAKING_CHANGES.md )
 
+PATCHES=(
+	# Webcam In Use counted every /dev character device as a camera.
+	"${FILESDIR}"/${P}-webcam-video-devices.patch
+)
+
 src_prepare() {
 	default
 
