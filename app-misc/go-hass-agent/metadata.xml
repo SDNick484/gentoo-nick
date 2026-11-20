@@ -5,6 +5,10 @@
 		<email>SDNick484@users.noreply.github.com</email>
 		<name>Nick Andrade</name>
 	</maintainer>
+	<use>
+		<flag name="ddcutil">Pull in <pkg>app-misc/ddcutil</pkg> for external monitor brightness control</flag>
+		<flag name="nvidia">Pull in <pkg>x11-drivers/nvidia-drivers</pkg> (nvidia-smi) for NVIDIA GPU sensors</flag>
+	</use>
 	<upstream>
 		<remote-id type="github">joshuar/go-hass-agent</remote-id>
 		<bugs-to>https://github.com/joshuar/go-hass-agent/issues</bugs-to>

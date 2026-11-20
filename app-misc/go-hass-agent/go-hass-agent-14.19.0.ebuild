@@ -20,8 +20,16 @@ LICENSE+=" Apache-2.0 BSD BSD-2 MIT || ( BSD GPL-2 ) || ( EPL-2.0 BSD )"
 LICENSE+=" 0BSD BSD-2 MIT OFL-1.1"
 SLOT="0"
 KEYWORDS="~amd64"
+IUSE="ddcutil geolocation nvidia"
 
-RDEPEND="sys-apps/dbus"
+# All optional features are found at run time (ddcutil and nvidia-smi on
+# PATH, GeoClue over D-Bus), so these only affect RDEPEND.
+RDEPEND="
+	sys-apps/dbus
+	ddcutil? ( app-misc/ddcutil )
+	geolocation? ( app-misc/geoclue )
+	nvidia? ( x11-drivers/nvidia-drivers )
+"
 BDEPEND=">=dev-lang/go-1.27.3:="
 
 DOCS=( README.md CHANGELOG.md BREAKING_CHANGES.md )
@@ -90,13 +98,10 @@ pkg_postinst() {
 
 	optfeature "session, screen lock and power sensors/controls" sys-auth/elogind sys-apps/systemd
 	optfeature "battery sensors" sys-power/upower
-	optfeature "location sensor" app-misc/geoclue
 	optfeature "firmware security sensor" sys-apps/fwupd
 	optfeature "running apps and desktop settings sensors" sys-apps/xdg-desktop-portal
 	optfeature "audio volume, mute and microphone sensors" media-video/pipewire
-	optfeature "external monitor brightness control" app-misc/ddcutil
 	optfeature "webcam control" media-video/ffmpeg
 	optfeature "chrony time sync sensors" net-misc/chrony
-	optfeature "NVIDIA GPU sensors" x11-drivers/nvidia-drivers
 	optfeature "setting file capabilities manually" sys-libs/libcap
 }
