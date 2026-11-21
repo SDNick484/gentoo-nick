@@ -24,6 +24,29 @@ echo 'dev-python/elevate ~amd64' >> /etc/portage/package.accept_keywords/howdy
 echo 'app-misc/go-hass-agent ~amd64' >> /etc/portage/package.accept_keywords/go-hass-agent
 ```
 
+The MCP servers and their dependencies (see [MCP servers](#mcp-servers) below)
+are `~amd64` too; the dependencies keyworded here are `dev-python/mcp`,
+`mcp-types`, `sse-starlette`, `aioharmony`, `androidtvremote2`, `aiomqtt`,
+`aiowebostv` and `adb-shell`, plus the `acct-user`/`acct-group` pairs:
+
+```
+cat >> /etc/portage/package.accept_keywords/mcp <<'EOF'
+app-misc/mcp-server-* ~amd64
+dev-python/mcp ~amd64
+dev-python/mcp-types ~amd64
+dev-python/sse-starlette ~amd64
+dev-python/aioharmony ~amd64
+dev-python/androidtvremote2 ~amd64
+dev-python/aiomqtt ~amd64
+dev-python/aiowebostv ~amd64
+dev-python/adb-shell ~amd64
+EOF
+```
+
+A few `::gentoo` dependencies are `~amd64` only too (`dev-python/pydantic`,
+`zeroconf`, `paho-mqtt` at the time of writing); on a stable system, emerge
+lists what else to accept.
+
 ## Packages
 
 | Package | Notes |
@@ -32,6 +55,9 @@ echo 'app-misc/go-hass-agent ~amd64' >> /etc/portage/package.accept_keywords/go-
 | `sys-auth/howdy` | 3.0.0, pinned to an upstream commit. Needs the two packages below. The global `gtk` flag adds the `howdy-gtk` GUI. |
 | `sys-auth/howdy-models` | The three dlib face models howdy loads. |
 | `dev-python/elevate` | `howdy-gtk` dependency. |
+| `app-misc/mcp-server-*` | Nine [MCP servers](#mcp-servers): onkyo, shieldtv, harmony, sofabaton, webos, batocera, pixelcade, misterfpga, steam-backlog. |
+| `dev-python/mcp`, `dev-python/mcp-types` | The MCP Python SDK 2.x (GURU has only 1.x). |
+| `dev-python/sse-starlette`, `aioharmony`, `androidtvremote2`, `aiomqtt`, `aiowebostv`, `adb-shell` | MCP server dependencies missing from `::gentoo`. |
 | `app-misc/go-hass-agent` | [Go Hass Agent](https://github.com/joshuar/go-hass-agent), the Home Assistant desktop agent, with an OpenRC user service instead of upstream's systemd unit. |
 
 `sys-auth/howdy`, `sys-auth/howdy-models` and `dev-python/elevate` started from
@@ -79,3 +105,54 @@ Start the agent with `rc-update --user add go-hass-agent default` (OpenRC 0.60+
 user services), or copy `start-go-hass-agent.desktop` into `~/.config/autostart`
 if your session bus isn't the dbus user service. Upstream's file capabilities are
 not applied; the post-install message has the `setcap` line if you want them.
+
+## MCP servers
+
+One package per `SDNick484/mcp-server-*` repository (`mcp-server-shared` is not
+a package: each server carries a synced copy of it). Each has the tagged
+release and a `-9999` live ebuild; `steam-backlog` has no tag yet, so it is
+live only and needs `**`. The common code is in `eclass/mcp-server.eclass`.
+
+| Package | Service user | Init scripts |
+|---|---|---|
+| `app-misc/mcp-server-onkyo` | `mcp-onkyo` | `mcp-server-onkyo` |
+| `app-misc/mcp-server-shieldtv` | `mcp-shieldtv` | `mcp-server-shieldtv` |
+| `app-misc/mcp-server-harmony` | `mcp-harmony` | `mcp-server-harmony` |
+| `app-misc/mcp-server-sofabaton` | `mcp-sofabaton` | `mcp-server-sofabaton` |
+| `app-misc/mcp-server-webos` | `mcp-webos` | `mcp-server-webos` |
+| `app-misc/mcp-server-batocera` | `mcp-batocera` | `mcp-server-batocera` |
+| `app-misc/mcp-server-pixelcade` | `mcp-pixelcade` | `mcp-server-pixelcade` |
+| `app-misc/mcp-server-misterfpga` | `mcp-mister` | `mcp-server-misterfpga`, `mcp-server-misterfpga-track` |
+| `app-misc/mcp-server-steam-backlog` | `mcp-steam-backlog` | `mcp-server-steam-backlog` |
+
+For an MCP client on the same machine (Claude Code, Claude Desktop), nothing
+else is needed: point the client at `mcp-server-<name> serve` (stdio).
+
+As a service, each package installs the upstream Alpine deployment with its
+paths moved from the `/opt` virtualenv to `/usr`:
+
+- `/etc/init.d/mcp-server-<name>`: the upstream OpenRC script
+  (`supervise-daemon`, `retry="SIGTERM/15/SIGKILL/5"`), run as the service user.
+- `/usr/libexec/mcp-server-<name>/run.sh`: loads the env file and execs
+  `mcp-server-<name> serve --http`.
+- `/etc/mcp-server-<name>/env` (`root:<user>`, 0640, config-protected): bind
+  address, port, path and Cloudflare Access, from upstream's `env.example`.
+- State in `/var/lib/mcp-server-<name>`, logs in `/var/log/mcp-server-<name>`.
+
+```
+vim /etc/mcp-server-onkyo/env
+rc-update add mcp-server-onkyo default
+rc-service mcp-server-onkyo start
+```
+
+`mcp-server-batocera` also installs the cabinet's play tracker in
+`/usr/share/mcp-server-batocera/playtracker`, to copy to the Batocera machine.
+
+The users and groups get dynamic IDs (`ACCT_USER_ID=-1`). To pin one, set e.g.
+`ACCT_USER_MCP_ONKYO_ID=…` in `make.conf`.
+
+Release tarballs are GitHub tag archives. To add a release after tagging
+`vX.Y.Z` upstream, copy the previous ebuild to the new version and run
+`ebuild <file> manifest`. If GURU is also enabled, its `dev-python/mcp` (1.x)
+and `dev-python/adb-shell` overlap with this overlay's; the servers need
+`>=dev-python/mcp-2.3`.
