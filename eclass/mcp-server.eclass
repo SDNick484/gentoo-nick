@@ -22,6 +22,13 @@
 # README puts them: /etc/${PN}/env for HTTP and Cloudflare Access, and the
 # server's own config directory for devices.
 #
+# The server reports the commit it runs at /healthz, from a COMMIT file that
+# upstream's install.sh writes beside the virtualenv.  Here it is
+# /usr/share/${PN}/COMMIT, which run.sh exports as MCP_COMMIT_FILE (a value
+# set in /etc/${PN}/env wins): the commit git-r3 checked out for live
+# ebuilds, and for releases the commit git archive records in the tag
+# tarball's pax header.  Servers released before the feature ignore it.
+#
 # Usage:
 # @CODE
 # EAPI=8
@@ -123,12 +130,38 @@ mcp-server_add_deps() {
 	_MCP_SERVER_ADD_DEPS_CALLED=1
 }
 
+# @FUNCTION: _mcp-server_commit
+# @INTERNAL
+# @DESCRIPTION:
+# Print the full SHA of the commit being installed, or nothing if it is not
+# known.  Live ebuilds: the commit git-r3 checked out.  Releases: git archive
+# (which makes GitHub's tag tarballs) writes the commit to a pax global
+# header, the tarball's first block, as the record "52 comment=<sha>" in the
+# data block after it.
+_mcp-server_commit() {
+	debug-print-function ${FUNCNAME} "$@"
+
+	local commit
+	if [[ ${PV} == *9999* ]]; then
+		commit=${EGIT_VERSION}
+	else
+		# Reads the first 1 KiB only; gzip stopping on SIGPIPE is expected.
+		local record
+		record=$(gzip -dc "${DISTDIR}/${P}.gh.tar.gz" 2>/dev/null |
+			head -c 1024 | tail -c 512 | tr -d '\0')
+		[[ ${record} =~ ^52\ comment=([0-9a-f]{40})$ ]] &&
+			commit=${BASH_REMATCH[1]}
+	fi
+	[[ ${commit} =~ ^[0-9a-f]{40}$ ]] && echo "${commit}"
+}
+
 # @FUNCTION: mcp-server_src_install
 # @DESCRIPTION:
 # Install the Python package, then the upstream OpenRC deployment:
 # deploy/alpine/run.sh as /usr/libexec/${PN}/run.sh (it loads
 # /etc/${PN}/env and execs the server), each MCP_SERVER_SERVICES init
-# script, and env.example as /etc/${PN}/env.
+# script, and env.example as /etc/${PN}/env.  Also stamp the installed
+# commit in /usr/share/${PN}/COMMIT (see the eclass description).
 mcp-server_src_install() {
 	debug-print-function ${FUNCNAME} "$@"
 
@@ -145,7 +178,13 @@ mcp-server_src_install() {
 		-e "s|/opt/${PN}/run.sh|${EPREFIX}/usr/libexec/${PN}/run.sh|g"
 	)
 
-	sed "${sed_args[@]}" "${deploy}/run.sh" > "${T}/run.sh" || die
+	# After run.sh has loaded the env file, so a setting there still wins.
+	local commit_file="${EPREFIX}/usr/share/${PN}/COMMIT"
+	sed "${sed_args[@]}" \
+		-e "/^exec /i export MCP_COMMIT_FILE=\"\${MCP_COMMIT_FILE:-${commit_file}}\"" \
+		"${deploy}/run.sh" > "${T}/run.sh" || die
+	grep -q '^export MCP_COMMIT_FILE=' "${T}/run.sh" ||
+		die "${ECLASS}: no exec line in upstream run.sh to export MCP_COMMIT_FILE before"
 	exeinto "/usr/libexec/${PN}"
 	doexe "${T}/run.sh"
 
@@ -166,6 +205,16 @@ mcp-server_src_install() {
 	fowners "root:${MCP_SERVER_USER}" "/etc/${PN}" "/etc/${PN}/env"
 	fperms 0750 "/etc/${PN}"
 	fperms 0640 "/etc/${PN}/env"
+
+	# Upstream's format: the commit, then the repository.
+	local commit=$(_mcp-server_commit)
+	if [[ -n ${commit} ]]; then
+		printf '%s\n%s\n' "${commit}" "SDNick484/${PN}" > "${T}/COMMIT" || die
+		insinto "/usr/share/${PN}"
+		doins "${T}/COMMIT"
+	else
+		eqawarn "${ECLASS}: commit unknown, so /healthz will not report it"
+	fi
 }
 
 # @FUNCTION: mcp-server_pkg_postinst

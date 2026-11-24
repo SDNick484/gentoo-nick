@@ -138,6 +138,13 @@ paths moved from the `/opt` virtualenv to `/usr`:
 - `/etc/mcp-server-<name>/env` (`root:<user>`, 0640, config-protected): bind
   address, port, path and Cloudflare Access, from upstream's `env.example`.
 - State in `/var/lib/mcp-server-<name>`, logs in `/var/log/mcp-server-<name>`.
+- `/usr/share/mcp-server-<name>/COMMIT`: the installed commit and repository,
+  which `/healthz` reports on servers that have the feature (every `main`, so
+  the `-9999` ebuilds, and releases tagged from it; the current tags predate
+  it and ignore the file). `run.sh` points `MCP_COMMIT_FILE` at it unless the env file
+  sets it. Live ebuilds stamp the commit they built; releases stamp the commit
+  recorded in the tag tarball's header, so there is nothing to update per
+  release.
 
 ```
 vim /etc/mcp-server-onkyo/env
