@@ -22,6 +22,7 @@ echo 'sys-auth/howdy ~amd64' >> /etc/portage/package.accept_keywords/howdy
 echo 'sys-auth/howdy-models ~amd64' >> /etc/portage/package.accept_keywords/howdy
 echo 'dev-python/elevate ~amd64' >> /etc/portage/package.accept_keywords/howdy
 echo 'app-misc/go-hass-agent ~amd64' >> /etc/portage/package.accept_keywords/go-hass-agent
+echo 'app-misc/melodious ~amd64' >> /etc/portage/package.accept_keywords/melodious
 ```
 
 The MCP servers and their dependencies (see [MCP servers](#mcp-servers) below)
@@ -59,6 +60,7 @@ lists what else to accept.
 | `dev-python/mcp`, `dev-python/mcp-types` | The MCP Python SDK 2.x (GURU has only 1.x). |
 | `dev-python/sse-starlette`, `aioharmony`, `androidtvremote2`, `aiomqtt`, `aiowebostv`, `adb-shell` | MCP server dependencies missing from `::gentoo`. |
 | `app-misc/go-hass-agent` | [Go Hass Agent](https://github.com/joshuar/go-hass-agent), the Home Assistant desktop agent, with an OpenRC user service instead of upstream's systemd unit. |
+| `app-misc/melodious` | [Melodious](https://github.com/schlambos/harmony-hub-control) 2.5.0, local setup and control of Logitech Harmony Hubs: the desktop app on a prebuilt Electron (`gui`), the hub installer (`melodious-install`) and the root tool (`melodious-hub-root`). Part of it is `all-rights-reserved`, so it needs that licence accepted and is `bindist`-restricted. Same files as `packaging/gentoo/` upstream. |
 
 `sys-auth/howdy`, `sys-auth/howdy-models` and `dev-python/elevate` started from
 [kcning/gentoo-overlay](https://github.com/kcning/gentoo-overlay); the original
